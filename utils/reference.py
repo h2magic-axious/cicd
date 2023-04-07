@@ -7,6 +7,8 @@ from tortoise import fields
 
 Template = Jinja2Templates(directory="templates")
 
+CACHE_CONFIGURE = dict()
+
 
 class AbstractBaseModel(Model):
     id: int = fields.IntField(pk=True)

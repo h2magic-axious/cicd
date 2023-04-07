@@ -27,11 +27,16 @@ async def service_index(request: Request):
 
 @router.get("/settings", response_class=HTMLResponse)
 async def service_settings(request: Request):
+    return Template.TemplateResponse(
+        "settings.html",
+        {"request": request}
+    )
+
+
+@router.get("/api-settings")
+async def api_settings(request: Request):
     q = Q()
     if active := request.query_params.get("active"):
         q &= Q(active=(active == "yes"))
 
-    return Template.TemplateResponse(
-        "settings.html",
-        {"request": request, "data": await Configure.filter(q)}
-    )
+    return response_result(1, await Configure.filter(q))
