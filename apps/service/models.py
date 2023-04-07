@@ -32,7 +32,7 @@ class Configure(AbstractBaseModel):
 class Service(AbstractBaseModel):
     name = fields.CharField(max_length=20, unique=True, null=False, description="服务名")
     alias = fields.CharField(max_length=30, description="别名")
-    description = fields.TextField(description="描述")
+    description = fields.TextField(description="描述", null=True)
     repository = fields.CharField(max_length=255, null=False, description="代码仓库")
     container_name = fields.CharField(max_length=20, unique=True, null=False, description="容器名")
 

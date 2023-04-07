@@ -1,9 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
-from tortoise.expressions import Q
 
-from apps.service.models import Configure
+from apps.service.models import Configure, Service
 from utils.reference import Template, response_result
 
 router = APIRouter(prefix="/service")
@@ -20,7 +19,7 @@ async def service_login(request: Request):
 @router.get("/index", response_class=HTMLResponse)
 async def service_index(request: Request):
     return Template.TemplateResponse(
-        "index.html",
+        "services.html",
         {"request": request}
     )
 
@@ -34,12 +33,8 @@ async def service_settings(request: Request):
 
 
 @router.get("/api-settings")
-async def api_settings(request: Request):
-    q = Q()
-    if active := request.query_params.get("active"):
-        q &= Q(active=(active == "yes"))
-
-    return response_result(1, await Configure.filter(q))
+async def api_settings():
+    return response_result(1, await Configure.all())
 
 
 @router.post("/api-change-setting")
@@ -54,4 +49,20 @@ async def api_change_setting(request: Request):
         configure.value = str(body["value"])
 
     await configure.save()
+    return response_result(1, "success")
+
+
+@router.get("/api-services")
+async def api_services():
+    return response_result(1, await Service.all())
+
+
+@router.post("/api-change-service")
+async def api_change_service(request: Request):
+    body = await request.json()
+    if not (service := await Service.filter(id=body["id"]).first()):
+        return response_result(0, "Service not found")
+
+    await service.update_from_dict({body["field"]: body["value"]})
+    await service.save()
     return response_result(1, "success")

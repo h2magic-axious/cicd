@@ -1,0 +1,87 @@
+{% extends "index.html" %}
+
+{% block indexBody %}
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">服务名</th>
+            <th scope="col">别名</th>
+            <th scope="col">代码仓库</th>
+            <th scope="col">容器名</th>
+            <th scope="col">描述</th>
+        </tr>
+        </thead>
+        <tbody id="app">
+        </tbody>
+    </table>
+{% endblock %}
+
+{% block jsBlock %}
+    <script>
+        window.onload = function () {
+            fetch("/service/api-services", {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code === 1) {
+                    let table = document.querySelector("#app")
+                    data.result.forEach((e) => {
+                        table.appendChild(renderTr(e))
+                    })
+                } else {
+                    alert(data.result)
+                }
+            })
+        }
+
+        function renderTr(item) {
+            let resultDom = document.createElement("tr")
+
+            let id = item["id"]
+
+            let thId = document.createElement("th")
+            thId.setAttribute("scope", "row")
+            thId.innerText = id
+            resultDom.appendChild(thId)
+
+            const fields = ["name", "alias", "repository", "container_name", "description"]
+            fields.forEach((e) => {
+                let td = document.createElement("td")
+                td.appendChild(renderInput(id, e, item[e]))
+                resultDom.appendChild(td)
+            })
+
+            return resultDom
+        }
+
+        function renderInput(id, field, value) {
+            let inputDom = document.createElement("input")
+            inputDom.type = "text"
+            inputDom.classList.add("form-control")
+            inputDom.value = value
+
+            inputDom.addEventListener("change", function (ev) {
+                changeValue(id, field, ev.target.value)
+            })
+
+            return inputDom
+        }
+
+        function changeValue(id, field, value) {
+            fetch("/service/api-change-service", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify({
+                    id: id,
+                    field: field,
+                    value: value
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                }
+            })
+        }
+
+    </script>
+{% endblock %}
