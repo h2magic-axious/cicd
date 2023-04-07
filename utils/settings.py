@@ -13,13 +13,13 @@ DB_CONF = {
     "port": Env.DB_PORT,
     "user": "postgres",
     "password": "postgres",
-    "database": "super_continent_user",
+    "database": "cicd",
 }
 
 DATABASE = {"default": {"engine": "tortoise.backends.asyncpg", "credentials": DB_CONF}}
 
 APPLICATIONS = [
-
+    "service"
 ]
 
 DATABASE_MODELS = [f"apps.{a}.models" for a in APPLICATIONS]
