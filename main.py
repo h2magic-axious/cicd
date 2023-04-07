@@ -7,7 +7,7 @@ from tortoise.contrib.fastapi import register_tortoise
 
 from utils.settings import *
 from utils.whitelist import check_whitelist
-from utils.administrator import Administrator
+from utils.administrator import administrator
 
 app = FastAPI(default_response_class=ORJSONResponse)
 
@@ -59,8 +59,8 @@ async def add_process_time_header(request: Request, call_next):
     if not (token := request.headers.get("Authorization")):
         return Response("Token not found", status_code=400)
 
-    token = token.replace("Bearer ", "")
-    request.scope["user"] = Administrator.parse(token)
+    if administrator.parse(token.replace("Bearer ", "")) != administrator:
+        return Response("Invalid Token", status_code=400)
 
     return await _response(request, call_next)
 
@@ -81,3 +81,15 @@ register_tortoise(
 @app.get("/health")
 async def health():
     return "Health"
+
+
+@app.post("/login")
+async def login(request: Request):
+    body = await request.json()
+    assert administrator.check(body["username"], body["password"]) is True
+    return administrator.token
+
+
+@app.get("/test")
+async def login():
+    return "success"

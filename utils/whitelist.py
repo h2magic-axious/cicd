@@ -2,7 +2,7 @@ import re
 
 RE_WHITELIST = [
     r"/health",
-    r"/user/login"
+    r"/login"
 ]
 
 WHITELIST = [re.compile(i) for i in RE_WHITELIST]

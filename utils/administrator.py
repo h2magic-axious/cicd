@@ -15,6 +15,9 @@ class Administrator:
     def check(self, username, password):
         return self.username == username and self.password == password
 
+    def __ne__(self, other):
+        return self.username != other.username or self.password != other.password
+
     @property
     def token(self):
         data = {
@@ -26,3 +29,6 @@ class Administrator:
     def parse(token: str):
         data = jwt.decode(token, Env.SECRET_KEY, algorithms=[Env.ALGORITHM])
         return pickle.loads(base64.b64decode(data["instance"]))
+
+
+administrator = Administrator()

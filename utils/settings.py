@@ -19,7 +19,7 @@ DB_CONF = {
 DATABASE = {"default": {"engine": "tortoise.backends.asyncpg", "credentials": DB_CONF}}
 
 APPLICATIONS = [
-    "user"
+
 ]
 
 DATABASE_MODELS = [f"apps.{a}.models" for a in APPLICATIONS]
