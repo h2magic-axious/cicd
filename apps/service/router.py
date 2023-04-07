@@ -40,3 +40,18 @@ async def api_settings(request: Request):
         q &= Q(active=(active == "yes"))
 
     return response_result(1, await Configure.filter(q))
+
+
+@router.post("/api-change-setting")
+async def api_change_setting(request: Request):
+    body = await request.json()
+    if not (configure := await Configure.filter(name=body["name"]).first()):
+        return response_result(0, f"Configure({body['name']}) not found")
+
+    if body["field"] == "active":
+        configure.active = body["value"]
+    else:
+        configure.value = str(body["value"])
+
+    await configure.save()
+    return response_result(1, "success")

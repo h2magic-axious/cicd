@@ -8,7 +8,6 @@
             <th scope="col">配置名</th>
             <th scope="col">配置内容</th>
             <th scope="col">启用?</th>
-            <th scope="col">#</th>
         </tr>
         </thead>
         <tbody id="app">
@@ -36,6 +35,8 @@
         }
 
         function renderTr(item) {
+            const name = item["name"]
+
             let domTr = document.createElement("tr")
 
             let thId = document.createElement("th")
@@ -44,44 +45,53 @@
             domTr.appendChild(thId)
 
             let tdName = document.createElement("td")
-            tdName.innerHTML = `<input type="text" class="form-control" value="${item['name']}" />`
+            tdName.innerText = name
             domTr.appendChild(tdName)
 
-            let tdDataType = document.createElement("td")
-            let selectComponent = document.createElement("select")
-            selectComponent.classList.add("form-select")
-            selectComponent.innerHTML = `
-            <option value="string">字符串</option>
-            <option value="int">整型</option>
-            <option value="float">浮点型</option>
-            <option value="bool">布尔值</option>
-            `
-            selectComponent.value = item["data_type"]
-            tdDataType.appendChild(selectComponent)
-            domTr.appendChild(tdDataType)
-
             let tdValue = document.createElement("td")
-            tdValue.innerHTML = `<input type="text" class="form-control" value="${item['value']}" />`
+            let valueInputDom = document.createElement("input")
+            valueInputDom.type = "text"
+            valueInputDom.classList.add("form-control")
+            valueInputDom.value = item["value"]
+            valueInputDom.addEventListener("change", function (ev) {
+                changeValue(name, "value", ev.target.value)
+            })
+            tdValue.appendChild(valueInputDom)
             domTr.appendChild(tdValue)
 
             let tdActive = document.createElement("td")
             let divDom = document.createElement("div")
             divDom.classList.add("form-check", "form-switch")
             let switchDom = document.createElement("input")
+            switchDom.id = name
             switchDom.classList.add("form-check-input")
             switchDom.type = "checkbox"
             switchDom.setAttribute("role", "switch")
             switchDom.checked = item["active"]
-            console.log(item["active"])
+            switchDom.addEventListener("change", function (ev) {
+                changeValue(name, "active", ev.target.checked)
+            })
             divDom.appendChild(switchDom)
             tdActive.appendChild(divDom)
             domTr.appendChild(tdActive)
 
-            let tdAction = document.createElement("td")
-            tdAction.innerHTML = ""
-            domTr.appendChild(tdAction)
-
             return domTr
+        }
+
+        function changeValue(name, field, value) {
+            fetch("/service/api-change-setting", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify({
+                    name: name,
+                    field: field,
+                    value: value
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                }
+            })
         }
 
     </script>
