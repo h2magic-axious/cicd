@@ -1,7 +1,11 @@
 import os
 
+from fastapi.templating import Jinja2Templates
+
 from tortoise.models import Model
 from tortoise import fields
+
+Template = Jinja2Templates(directory="templates")
 
 
 class AbstractBaseModel(Model):
