@@ -1,12 +1,15 @@
+import base64
 import importlib
+import json
 
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Cookie
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse, HTMLResponse
+from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
+from utils.reference import response_result
 from utils.settings import *
 from utils.whitelist import check_whitelist
 from utils.administrator import administrator
@@ -44,9 +47,6 @@ for app_name in BASE_DIR.joinpath("apps").iterdir():
 async def _response(request, call_next):
     try:
         response = await call_next(request)
-        # if isinstance(response, HTMLResponse):
-        #     response.headers["Content-Type"] = "text/html"
-
     except Exception as e1:
         response = Response(f"请求失败: {e1}")
         response.headers.update({
@@ -63,6 +63,9 @@ def check_token(request: Request):
         t = token.replace("Bearer ", "")
         return t
 
+    if session := request.cookies.get("session"):
+        return json.loads(base64.b64decode(session.split(".")[0]))["token"]
+
 
 # http 拦截器
 @app.middleware("http")
@@ -71,9 +74,9 @@ async def add_process_time_header(request: Request, call_next):
         return await _response(request, call_next)
 
     if not (token := check_token(request)):
-        return Response("Token not found", status_code=400)
+        return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
 
-    if administrator.parse(token.replace("Bearer ", "")) != administrator:
+    if administrator.parse(token) != administrator:
         return Response("Invalid Token", status_code=400)
 
     return await _response(request, call_next)
@@ -102,4 +105,4 @@ async def login(request: Request):
     body = await request.json()
     assert administrator.check(body["username"], body["password"]) is True
     request.session["token"] = administrator.token
-    return request.session["token"]
+    return response_result(1, request.session["token"])

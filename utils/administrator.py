@@ -30,5 +30,8 @@ class Administrator:
         data = jwt.decode(token, Env.SECRET_KEY, algorithms=[Env.ALGORITHM])
         return pickle.loads(base64.b64decode(data["instance"]))
 
+    def __str__(self):
+        return f"Username<{self.username}>"
+
 
 administrator = Administrator()

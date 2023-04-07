@@ -36,3 +36,7 @@ def try_to_do(func):
 
 def random_string(length=6):
     return os.urandom(length).hex()
+
+
+def response_result(code, result):
+    return {"code": code, "result": result}

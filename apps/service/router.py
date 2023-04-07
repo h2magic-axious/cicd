@@ -7,9 +7,17 @@ from utils.reference import Template
 router = APIRouter(prefix="/service")
 
 
+@router.get("/login", response_class=HTMLResponse)
+async def service_login(request: Request):
+    return Template.TemplateResponse(
+        "login.html",
+        {"request": request}
+    )
+
+
 @router.get("/index", response_class=HTMLResponse)
 async def service_index(request: Request):
     return Template.TemplateResponse(
-        "base.html",
-        {"request": request, "name": request.query_params.get("name")}
+        "index.html",
+        {"request": request}
     )
