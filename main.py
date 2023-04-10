@@ -71,6 +71,9 @@ def check_token(request: Request):
 # http 拦截器
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
+    if request.url.path == "/":
+        return RedirectResponse(url=app.url_path_for("service_index"))
+
     if check_whitelist(request.url.path):
         return await _response(request, call_next)
 

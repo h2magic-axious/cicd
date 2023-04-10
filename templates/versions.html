@@ -169,6 +169,7 @@
                 })
             }).then(response => response.json()).then(data => {
                 loading.hide()
+                alert(data.result)
                 window.location.reload()
             })
         }

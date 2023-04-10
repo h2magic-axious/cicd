@@ -11,9 +11,8 @@ DATA_DIR = BASE_DIR.joinpath("data")
 
 class ServiceAgent:
     __instance_map = dict()
-    # client = docker.DockerClient(base_url="unix://var/run/docker.sock")
-    client = docker.from_env()
     registry = Env.REGISTRY
+    client = docker.from_env() if Env.DOCKER_SOCK else docker.DockerClient(base_url=Env.DOCKER_SOCK)
     network = Env.NETWORK
 
     def __new__(cls, service: Service):
@@ -41,9 +40,11 @@ class ServiceAgent:
             git.Repo.clone_from(self.service.repository, p)
 
     async def build(self, version):
+        await self.git_clone()
+
         response = self.client.api.build(
-            path=str(d := DATA_DIR.joinpath(self.service.name)),
-            dockerfile=str(d.joinpath("Dockerfile")),
+            path=str(DATA_DIR.joinpath(self.service.name)),
+            dockerfile="Dockerfile",
             tag=self.mark_tag(version),
             rm=True,
             decode=True,

@@ -16,6 +16,6 @@ class Env:
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM", "HS256")
 
-    DOCKER_SOCK = os.getenv("DOCKER_SOCK", "unix://var/run/docker.sock")
+    DOCKER_SOCK = os.getenv("DOCKER_SOCK", None)
     REGISTRY = os.getenv("REGISTRY", None)
     NETWORK = os.getenv("NETWORK")
