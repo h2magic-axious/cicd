@@ -1,0 +1,177 @@
+{% extends "index.html" %}
+
+{% block indexBody %}
+    <h3>服务名: <span style="color: red">{{ name }}</span></h3>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        新建
+    </button>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">发布日期</th>
+            <th scope="col">版本号</th>
+            <th scope="col">运行状态</th>
+            <th scope="col">#</th>
+        </tr>
+        </thead>
+        <tbody id="app">
+        </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">{{ name }}服务新建新版</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 row">
+                        <label for="versionNumber" class="col-sm-2 col-form-label">版本号</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="versionNumber">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="newVersion()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block jsBlock %}
+    <script>
+        window.onload = function () {
+            const pathArray = window.location.pathname.split("/")
+            fetch(`/service/api-versions/${pathArray[3]}`, {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code === 1) {
+                    let table = document.querySelector("#app")
+                    data.result.forEach((e) => {
+                        table.appendChild(renderTr(e))
+                    })
+                } else {
+                    alert(data.result)
+                }
+            }).catch(error => {
+                alert(error)
+                window.location.href = "/service/login"
+            })
+        }
+
+        function renderTr(item) {
+            let resultDom = document.createElement("tr")
+
+            let thId = document.createElement("th")
+            thId.setAttribute("scope", "row")
+            thId.innerText = item["image_id"]
+            resultDom.appendChild(thId)
+
+            const fields = ["created_at", "version"]
+            fields.forEach((e) => {
+                let td = document.createElement("td")
+                td.innerText = item[e]
+                resultDom.appendChild(td)
+            })
+
+            let runningStatus = document.createElement("td")
+            if (item["running"]) {
+                runningStatus.textContent = "运行中"
+                runningStatus.style.color = "#00cc00"
+            } else {
+                runningStatus.textContent = "未运行"
+                runningStatus.style.color = "black"
+            }
+            resultDom.appendChild(runningStatus)
+
+            resultDom.appendChild(renderButtonGroup(item))
+
+            return resultDom
+        }
+
+        function renderButtonGroup(item) {
+            let div = document.createElement("div")
+            div.classList.add("btn-group")
+            div.setAttribute("role", "group")
+
+            let runButton = document.createElement("button")
+            runButton.type = "button"
+            runButton.classList.add("btn", "btn-success")
+            runButton.innerText = "运行"
+            div.appendChild(runButton)
+
+            let backButton = document.createElement("button")
+            backButton.type = "button"
+            backButton.classList.add("btn", "btn-danger")
+            backButton.innerText = "删除"
+            backButton.addEventListener("click", function () {
+                deleteVersion(item["id"])
+            })
+            div.appendChild(backButton)
+
+            return div
+        }
+
+        function changeValue(id, field, value) {
+            fetch("/service/api-change-service", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify({
+                    id: id,
+                    field: field,
+                    value: value
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                }
+            })
+        }
+
+        function runService(item) {
+            if (item["running"]) {
+                alert("已经在运行了")
+            } else {
+
+            }
+        }
+
+        function deleteVersion(id) {
+            fetch(`/service/api-delete/${id}`, {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                } else {
+                    window.location.reload()
+                }
+            })
+        }
+
+        function newVersion() {
+            const loading = new Loading({
+                type: 3,
+                wrap: document.querySelector("#exampleModal")
+            })
+            loading.init()
+            fetch("/service/api-new-version", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify({
+                    name: window.location.pathname.split("/")[3],
+                    version: document.querySelector("#versionNumber").value
+                })
+            }).then(response => response.json()).then(data => {
+                loading.hide()
+                window.location.reload()
+            })
+        }
+
+    </script>
+{% endblock %}

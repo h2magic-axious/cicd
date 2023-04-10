@@ -1,53 +1,69 @@
 import docker
 import git
 
-from apps.service.interface import get_configure
 from apps.service.models import Service
+from utils.environments import Env
 
 from utils.settings import BASE_DIR
 
 DATA_DIR = BASE_DIR.joinpath("data")
 
 
-async def init_or_clone(git_path, to_path):
-    p = DATA_DIR.joinpath(to_path)
-    if p.exists():
-        repo = git.Repo(p)
-        origin = repo.remote(name="origin")
-        origin.pull()
-    else:
-        repo = git.Repo.clone_from(git_path, p)
-
-    return repo
-
-
-async def build_image(dockerfile_path, container_name, version):
-    registry = await get_configure("docker_registry")
-    name = f"{registry}/{container_name}:{version}"
-
+class ServiceAgent:
+    __instance_map = dict()
+    # client = docker.DockerClient(base_url="unix://var/run/docker.sock")
     client = docker.from_env()
-    client.images.build(path=dockerfile_path, tag=name, rm=True)
-    client.images.push(name)
-    client.close()
+    registry = Env.REGISTRY
+    network = Env.NETWORK
 
+    def __new__(cls, service: Service):
+        if service.name not in cls.__instance_map:
+            cls.__instance_map[service.name] = object.__new__(cls)
+        return cls.__instance_map[service.name]
 
-async def deploy(service: Service, version, **kwargs):
-    client = docker.from_env()
-    registry = await get_configure("docker_registry")
-    network = await get_configure("docker_network")
+    def __init__(self, service: Service):
+        self.service = service
 
-    if container := client.containers.get(service.container_id):
-        container.remove()
+    def __del__(self):
+        self.client.close()
 
-    container = client.containers.run(
-        image=f"{registry}/{service.container_name}:{version}",
-        name=service.container_name,
-        network=network,
-        detach=True,
-        **kwargs
-    )
+    def mark_tag(self, version):
+        if self.registry is None:
+            return f"{self.service.name}:{version}"
+        else:
+            return f"{self.registry}/{self.service.name}:{version}"
 
-    service.container_id = container.id
-    await service.save()
+    async def git_clone(self):
+        p = DATA_DIR.joinpath(self.service.name)
+        if p.exists():
+            git.Repo(p).remote(name="origin").pull()
+        else:
+            git.Repo.clone_from(self.service.repository, p)
 
-    client.close()
+    async def build(self, version):
+        response = self.client.api.build(
+            path=str(d := DATA_DIR.joinpath(self.service.name)),
+            dockerfile=str(d.joinpath("Dockerfile")),
+            tag=self.mark_tag(version),
+            rm=True,
+            decode=True,
+            pull=True
+        )
+        for line in response:
+            print(line)
+            if "aux" in line:
+                temp: str = line["aux"]["ID"]
+                return temp.split(":")[1]
+
+    async def run(self, version):
+        if container := self.client.containers.get(self.service.container_id):
+            container.remove()
+
+        container = self.client.containers.run(
+            image=self.mark_tag(version),
+            name=self.service.name,
+            network=self.network,
+            detach=True
+        )
+        self.service.container_id = container.id
+        await self.service.save()
