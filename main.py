@@ -64,7 +64,8 @@ def check_token(request: Request):
         return t
 
     if session := request.cookies.get("session"):
-        return json.loads(base64.b64decode(session.split(".")[0]))["token"]
+        t = base64.b64decode(session.split(".")[0])
+        return json.loads(t)["token"]
 
 
 # http 拦截器

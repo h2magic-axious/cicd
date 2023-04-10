@@ -1,32 +1,10 @@
-import enum
-
 from utils.reference import AbstractBaseModel, AbstractCreateAtModel, fields
 
 
 class Configure(AbstractBaseModel):
     name = fields.CharField(max_length=20, null=False, unique=True, description="配置名")
-
-    class DataType(str, enum.Enum):
-        STRING = "string"
-        INT = "int"
-        FLOAT = "float"
-        BOOL = "bool"
-
-    data_type = fields.CharEnumField(DataType, max_length=6, description="数据类型")
     value = fields.TextField()
     active = fields.BooleanField(default=True, description="启用?")
-
-    @property
-    def real_value(self):
-        match self.data_type.value:
-            case self.DataType.INT:
-                return int(self.value)
-            case self.DataType.FLOAT:
-                return float(self.value)
-            case self.DataType.BOOL:
-                return self.value == "yes"
-            case _:
-                return self.value
 
 
 class Service(AbstractBaseModel):
@@ -35,6 +13,7 @@ class Service(AbstractBaseModel):
     description = fields.TextField(description="描述", null=True)
     repository = fields.CharField(max_length=255, null=False, description="代码仓库")
     container_name = fields.CharField(max_length=20, unique=True, null=False, description="容器名")
+    container_id = fields.CharField(max_length=20, unique=True, null=True, description="运行中的容器ID")
 
 
 class History(AbstractCreateAtModel):
