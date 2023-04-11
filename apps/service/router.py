@@ -1,7 +1,6 @@
 from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
-from fastapi.websockets import WebSocket, WebSocketDisconnect
 
 from apps.service.models import Service, History
 from utils.git_docker import ServiceAgent
@@ -66,7 +65,13 @@ async def api_versions(name: str):
 @router.get("/api-delete/{pk}")
 async def delete_version_history(pk):
     if history := await History.filter(id=pk).first():
-        ServiceAgent(await history.service).client.images.remove(history.image_id)
+        agent = ServiceAgent(await history.service)
+        #
+        if container := agent.client.containers.get(history.service.container_id):
+            container.remove()
+
+        agent.client.images.remove(history.image_id)
+
         await history.delete()
 
     return response_result(1, "success")

@@ -138,7 +138,15 @@
             if (item["running"]) {
                 alert("已经在运行了")
             } else {
-
+                fetch(`/service/api-run/${item["id"]}`, {
+                    headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+                }).then(response => response.json()).then(data => {
+                    if (data.code !== 1) {
+                        alert(data.result)
+                    } else {
+                        window.location.reload()
+                    }
+                })
             }
         }
 
