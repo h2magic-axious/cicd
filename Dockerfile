@@ -4,8 +4,7 @@ WORKDIR /app
 
 COPY . /app
 
-RUN apt update && apt install git -y && \
-    chmod ugo+x start.sh && \
+RUN apt update && apt install git -y &&  \
     pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && \
     pip install -r requirements.txt
 

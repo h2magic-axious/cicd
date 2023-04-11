@@ -19,3 +19,6 @@ class Env:
     DOCKER_SOCK = os.getenv("DOCKER_SOCK", None)
     REGISTRY = os.getenv("REGISTRY", None)
     NETWORK = os.getenv("NETWORK")
+
+    GIT_USER = os.getenv("GIT_USERNAME")
+    GIT_PASS = os.getenv("GIT_PASSWORD")

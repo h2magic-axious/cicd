@@ -1,9 +1,8 @@
 import docker
-import git
+from git import Repo
 
 from apps.service.models import Service
 from utils.environments import Env
-
 from utils.settings import BASE_DIR
 
 DATA_DIR = BASE_DIR.joinpath("data")
@@ -34,10 +33,11 @@ class ServiceAgent:
 
     async def git_clone(self):
         p = DATA_DIR.joinpath(self.service.name)
+
         if p.exists():
-            git.Repo(p).remote(name="origin").pull()
+            Repo(p).remote(name="origin").pull()
         else:
-            git.Repo.clone_from(self.service.repository, p)
+            Repo.clone_from(self.service.repository, p)
 
     async def build(self, version):
         await self.git_clone()
