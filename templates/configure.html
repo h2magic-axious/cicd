@@ -1,0 +1,56 @@
+{% extends "index.html" %}
+
+{% block indexBody %}
+    <h3>服务名: <span style="color: red">{{ name }}</span></h3>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        新建
+    </button>
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">发布日期</th>
+            <th scope="col">版本号</th>
+            <th scope="col">运行状态</th>
+            <th scope="col">#</th>
+        </tr>
+        </thead>
+        <tbody id="app">
+        </tbody>
+    </table>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">{{ name }}</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 row">
+                        <label for="versionNumber" class="col-sm-4 col-form-label">版本号</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="versionNumber">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="versionDesc" class="col-sm-4 col-form-label">版本描述</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="versionDesc">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="updateVersion()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+{% block jsBlock %}
+
+{% endblock %}

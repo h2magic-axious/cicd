@@ -20,3 +20,8 @@ async def service_index(request: Request):
 @router.get("/version/{name}")
 async def service_version(request: Request, name: str):
     return Template.TemplateResponse("versions.html", {"request": request, "name": name})
+
+
+@router.get("/configure/{name}")
+async def service_configure(request: Request, name: str):
+    return Template.TemplateResponse("configure.html", {"request": request, "name": name})

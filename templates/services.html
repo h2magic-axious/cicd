@@ -23,7 +23,7 @@
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">{{ name }}新建服务</h1>
+                <h1 class="modal-title fs-5" id="exampleModalLabel">新建服务</h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -130,6 +130,9 @@
         backButton.type = "button"
         backButton.classList.add("btn", "btn-outline-primary")
         backButton.innerText = "配置"
+        backButton.addEventListener("click", function () {
+            window.location.href = `/service/configure/${item["name"]}`
+        })
         div.appendChild(backButton)
         
         return div

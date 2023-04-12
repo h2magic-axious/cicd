@@ -121,7 +121,7 @@ async def run_history(history_id):
     try:
         service: Service = await history.service
 
-        if (old_version := await History.filter(service=service, running=True).first()):
+        if old_version := await History.filter(service=service, running=True).first():
             old_version.running = False
             await old_version.save()
 
