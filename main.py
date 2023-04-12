@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
-from utils.reference import response_result
+from utils.reference import response_result, try_to_do
 from utils.settings import *
 from utils.whitelist import check_whitelist
 from utils.administrator import administrator
@@ -58,6 +58,7 @@ async def _response(request, call_next):
     return response
 
 
+@try_to_do
 def check_token(request: Request):
     if token := request.headers.get("Authorization"):
         t = token.replace("Bearer ", "")
@@ -77,7 +78,8 @@ async def add_process_time_header(request: Request, call_next):
     if check_whitelist(request.url.path):
         return await _response(request, call_next)
 
-    if not (token := check_token(request)):
+    status, token = check_token(request)
+    if not status or token is None:
         return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
 
     if administrator.parse(token) != administrator:
