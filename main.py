@@ -1,18 +1,18 @@
 import base64
-import importlib
 import json
 
-from fastapi import FastAPI, Request, Response, Cookie
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
+from apps.service.router import router as service_router
+from utils.administrator import check_admin, build_token, check_token
 from utils.reference import response_result, try_to_do
 from utils.settings import *
 from utils.whitelist import check_whitelist
-from utils.administrator import administrator
 
 app = FastAPI(default_response_class=ORJSONResponse)
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -28,20 +28,7 @@ app.add_middleware(
 # 增加Session
 app.add_middleware(SessionMiddleware, secret_key=Env.SECRET_KEY)
 
-for app_name in BASE_DIR.joinpath("apps").iterdir():
-    name = app_name.name
-    if app_name.is_dir() and name != "__pycache__":
-        print("导入应用: ", name)
-        # 导入 Router
-        try:
-            r = importlib.import_module(f"apps.{name}.router")
-            app.include_router(r.router)
-        except Exception as e:
-            print(f"未找到路由表: apps.{name}.router: {e}")
-
-        # 导入 Signals
-        if app_name.joinpath("signals.py").exists():
-            importlib.import_module(f"apps.{name}.signals")
+app.include_router(service_router)
 
 
 async def _response(request, call_next):
@@ -59,7 +46,7 @@ async def _response(request, call_next):
 
 
 @try_to_do
-def check_token(request: Request):
+def has_token(request: Request):
     if token := request.headers.get("Authorization"):
         t = token.replace("Bearer ", "")
         return t
@@ -73,20 +60,13 @@ def check_token(request: Request):
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
     if request.url.path == "/":
-        return RedirectResponse(url=app.url_path_for("service_index"))
+        return RedirectResponse(url="/service/index")
     if check_whitelist(request.url.path):
         return await _response(request, call_next)
 
-    status, token = check_token(request)
-    if not status or token is None:
-        return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
-
-    try:
-        if administrator.parse(token) != administrator:
-            return Response("Invalid Token", status_code=400)
-    except Exception as e:
-        print("Token解析错误: {e}")
-        return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
+    status, token = has_token(request)
+    if not status or token is None or not check_token(token):
+        return RedirectResponse(url="/service/login", headers={"Context-Type": "text/html"})
 
     return await _response(request, call_next)
 
@@ -112,6 +92,6 @@ async def health():
 @app.post("/login")
 async def login(request: Request):
     body = await request.json()
-    assert administrator.check(body["username"], body["password"]) is True
-    request.session["token"] = administrator.token
-    return response_result(1, request.session["token"])
+    assert check_admin(body["username"], body["password"]) is True
+    request.session["token"] = (token := build_token())
+    return response_result(1, token)

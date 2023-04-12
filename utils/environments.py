@@ -1,5 +1,6 @@
 import os
 
+import bcrypt
 import dotenv
 
 print("加载环境变量...")
@@ -11,7 +12,7 @@ class Env:
     DB_PORT = os.getenv("DB_PORT", 5432)
 
     ADMIN_USER = os.getenv("ADMIN_USER", "admin")
-    ADMIN_PASS = os.getenv("ADMIN_PASS", "admin")
+    ADMIN_PASS = bcrypt.hashpw(os.getenv("ADMIN_PASS", "admin").encode(), bcrypt.gensalt()).decode()
 
     SECRET_KEY = os.getenv("SECRET_KEY")
     ALGORITHM = os.getenv("ALGORITHM", "HS256")

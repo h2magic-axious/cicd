@@ -58,9 +58,7 @@ async def api_change_version(request: Request):
 
 @router.get("/version/{name}", response_class=HTMLResponse)
 async def service_version(request: Request, name: str):
-    return Template.TemplateResponse(
-        "versions.html", {"request": request, "name": name}
-    )
+    return Template.TemplateResponse("versions.html", {"request": request, "name": name})
 
 
 @router.get("/api-versions/{name}")
