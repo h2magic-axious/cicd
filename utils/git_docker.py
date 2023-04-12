@@ -51,6 +51,10 @@ def docker_stop(service: Service):
         container.remove()
 
 
+def docker_remove_container(container_id):
+    DockerClient.images.remove(container_id)
+
+
 def docker_run(service: Service, version):
     docker_stop(service)
 

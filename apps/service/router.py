@@ -1,9 +1,9 @@
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
 from fastapi.requests import Request
+from fastapi.responses import HTMLResponse
 
 from apps.service.models import Service, History
-from utils.git_docker import ServiceAgent
+from utils.git_docker import docker_build, docker_run, docker_remove_container
 from utils.reference import Template, response_result
 
 router = APIRouter(prefix="/service")
@@ -34,19 +34,19 @@ async def api_change_service(request: Request):
     await service.save()
     return response_result(1, "success")
 
+
 @router.post("/api/api-change-version")
 async def api_change_version(request: Request):
     body = await request.json()
     if not (history := await History.filter(id=body["id"]).first()):
         return response_result(0, "Version not found")
-    
+
     if body["field"] == "version":
         service = await history.service
         try:
-            agent = ServiceAgent(service)
-            agent.client.images.remove(history.image_id)
-            history.image_id = await agent.build(body["value"])
+            docker_remove_container(history.image_id)
             history.version = body["value"]
+            history.image_id = docker_build(service, history.version)
         except Exception as e:
             return response_result(0, str(e))
     else:
@@ -75,9 +75,7 @@ async def api_versions(name: str):
                 "description": history.description,
                 "running": history.running,
             }
-            for history in await History.filter(service__name=name).order_by(
-                "-created_at"
-            )
+            for history in await History.filter(service__name=name).order_by("-created_at")
         ],
     )
 
@@ -110,12 +108,12 @@ async def service_new_version(request: Request):
         return response_result(0, "Version has been existed")
 
     try:
-        await ServiceAgent(service).build(body["version"])
+        image_id = docker_build(service, body["version"])
     except Exception as e:
         return response_result(0, str(e))
 
     await History.create(
-        service=service, version=body["version"], description=body["description"]
+        service=service, version=body["version"], description=body["description"], image_id=image_id
     )
     return response_result(1, "success")
 
@@ -125,12 +123,17 @@ async def run_history(history_id):
     if not (history := await History.filter(id=history_id).first()):
         return response_result(0, "Version not found")
 
-    service = await history.service
+    service: Service = await history.service
     old_version = await History.filter(service=service, running=True).first()
 
     if old_version:
         old_version.running = False
         await old_version.save()
 
-    await ServiceAgent(service).run(history.version)
+    service.container_id = docker_run(service, history.version)
+    history.running = True
+
+    await service.save()
+    await history.save()
+
     return response_result(1, "success")
