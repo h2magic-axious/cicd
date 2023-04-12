@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 
 from apps.service.models import Service, History
 from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag
-from utils.reference import Template, response_result
+from utils.reference import Template, response_result, try_response
 
 router = APIRouter(prefix="/service")
 
@@ -93,12 +93,15 @@ async def new_service(request: Request):
 @router.get("/api-delete/{pk}")
 async def delete_version_history(pk):
     if history := await History.filter(image_id__contains=pk).first():
-        if history.running:
-            docker_stop(await history.service)
-        else:
-            docker_rmi(history.image_id)
+        try:
+            if history.running:
+                docker_stop(await history.service)
+            else:
+                docker_rmi(history.image_id)
 
-        await history.delete()
+            await history.delete()
+        except Exception as e:
+            return response_result(0, str(e))
 
     return response_result(1, "success")
 
@@ -131,17 +134,20 @@ async def run_history(history_id):
     if not (history := await History.filter(image_id__contains=history_id).first()):
         return response_result(0, "Version not found")
     
-    service: Service = await history.service
+    try:
+        service: Service = await history.service
 
-    if (old_version := await History.filter(service=service, running=True).first()):
-        old_version.running = False
-        await old_version.save()
+        if (old_version := await History.filter(service=service, running=True).first()):
+            old_version.running = False
+            await old_version.save()
 
-    service.container_id = docker_run(service, history.version)
-    history.running = True
+        service.container_id = docker_run(service, history.version)
+        history.running = True
 
-    print(service.name, service.container_id)
-    await history.save()
-    await service.save()
+        print(service.name, service.container_id)
+        await history.save()
+        await service.save()
 
-    return response_result(1, "success")
+        return response_result(1, "success")
+    except Exception as e:
+        return response_result(0, str(e))

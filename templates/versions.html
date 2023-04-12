@@ -178,9 +178,12 @@
     }
 
     function deleteVersion(id) {
+        const loading = new Loading({type: 3})
+        loading.init()
         fetch(`/service/api-delete/${id}`, {
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
         }).then(response => response.json()).then(data => {
+            loading.hide()
             if (data.code !== 1) {
                 alert(data.result)
             } else {

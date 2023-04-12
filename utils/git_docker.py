@@ -2,6 +2,7 @@ import docker
 from git import Repo
 
 from apps.service.models import Service
+from utils.reference import try_to_do
 from utils.environments import Env
 from utils.settings import BASE_DIR
 
@@ -40,18 +41,22 @@ def docker_build(service: Service, version):
     return image.id.split(":")[-1]
 
 
+@try_to_do
 def docker_stop(service: Service):
     if service.container_id is None:
         return
-    
+    print("ContaienrId: ", service.container_id)
     if container := DockerClient.containers.get(service.container_id):
+        container.stop()
         container.remove()
 
 
+@try_to_do
 def docker_rmi(image_id):
     DockerClient.images.remove(image_id)
 
 
+@try_to_do
 def docker_tag(old_tag, new_tag):
     DockerClient.api.tag(old_tag, new_tag)
     DockerClient.images.remove(old_tag)
@@ -61,10 +66,7 @@ def docker_run(service: Service, version):
     docker_stop(service)
 
     container = DockerClient.containers.run(
-        image=tag(service, version),
-        name=service.name, 
-        network=Env.NETWORK, 
-        detach=True
+        image=tag(service, version), name=service.name, network=Env.NETWORK, detach=True
     )
 
     print("容器ID: ", container.id)

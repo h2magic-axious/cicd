@@ -23,6 +23,10 @@ class AbstractCreateAtModel(Model):
         abstract = True
 
 
+def response_result(code, result):
+    return {"code": code, "result": result}
+
+
 def try_to_do(func):
     def inner(*args, **kwargs):
         try:
@@ -35,18 +39,26 @@ def try_to_do(func):
     return inner
 
 
+def try_response(func):
+    def inner(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return response_result(0, f"报错信息: {e}")
+
+    return inner
+
+
 def random_string(length=6):
     return os.urandom(length).hex()
 
 
-def response_result(code, result):
-    return {"code": code, "result": result}
-
-
 def execute(cmd):
     print(f"Exec: {cmd}")
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in iter(p.stdout.readline, b''):
+    p = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+    for line in iter(p.stdout.readline, b""):
         print(line.decode().strip())
 
     p.wait()
