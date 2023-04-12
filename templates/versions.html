@@ -8,7 +8,6 @@
     <table class="table table-striped">
         <thead>
         <tr>
-            <th scope="col">ID</th>
             <th scope="col">发布日期</th>
             <th scope="col">版本号</th>
             <th scope="col">运行状态</th>
@@ -29,9 +28,15 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3 row">
-                        <label for="versionNumber" class="col-sm-2 col-form-label">版本号</label>
+                        <label for="versionNumber" class="col-sm-4 col-form-label">版本号</label>
                         <div class="col-sm-10">
                             <input type="text" class="form-control" id="versionNumber">
+                        </div>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="versionDesc" class="col-sm-4 col-form-label">版本描述</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="versionDesc">
                         </div>
                     </div>
                 </div>
@@ -61,19 +66,13 @@
                 }
             }).catch(error => {
                 alert(error)
-                window.location.href = "/service/login"
             })
         }
 
         function renderTr(item) {
             let resultDom = document.createElement("tr")
 
-            let thId = document.createElement("th")
-            thId.setAttribute("scope", "row")
-            thId.innerText = item["image_id"]
-            resultDom.appendChild(thId)
-
-            const fields = ["created_at", "version"]
+            const fields = ["created_at", "version", "description"]
             fields.forEach((e) => {
                 let td = document.createElement("td")
                 td.innerText = item[e]
@@ -173,7 +172,8 @@
                 headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
                 body: JSON.stringify({
                     name: window.location.pathname.split("/")[3],
-                    version: document.querySelector("#versionNumber").value
+                    version: document.querySelector("#versionNumber").value,
+                    description: document.querySelector("#versionDesc").value
                 })
             }).then(response => response.json()).then(data => {
                 loading.hide()

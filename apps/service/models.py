@@ -17,3 +17,4 @@ class History(AbstractCreateAtModel):
     version = fields.CharField(max_length=20, description="版本号")
     image_id = fields.CharField(max_length=64, description="", null=True)
     running = fields.BooleanField(description="运行?", default=False)
+    description = fields.TextField(description="版本描述", null=True)
