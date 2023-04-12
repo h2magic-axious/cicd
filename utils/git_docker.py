@@ -31,19 +31,13 @@ def git_pull(service: Service):
 
 def docker_build(service: Service, version):
     p = git_pull(service)
-    response = DockerClient.api.build(
-        path=p,
-        dockerfile="Dockerfile",
-        tag=tag(service, version),
-        rm=True,
-        decode=True,
-        pull=True,
-    )
-    for line in response:
-        print(line)
-        if "aux" in line:
-            temp: str = line["aux"]["ID"]
-            return temp.split(":")[1]
+    image, build_logs = DockerClient.images.build(path=p, tag=tag(service, version))
+
+    for log in build_logs:
+        if "stream" in log:
+            print(log["stream"], end="")
+
+    return image.id.split(":")[-1]
 
 
 def docker_stop(service: Service):
@@ -51,8 +45,13 @@ def docker_stop(service: Service):
         container.remove()
 
 
-def docker_remove_container(container_id):
-    DockerClient.images.remove(container_id)
+def docker_rmi(image_id):
+    DockerClient.images.remove(image_id)
+
+
+def docker_tag(old_tag, new_tag):
+    DockerClient.api.tag(old_tag, new_tag)
+    DockerClient.images.remove(old_tag)
 
 
 def docker_run(service: Service, version):

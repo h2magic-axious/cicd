@@ -3,7 +3,7 @@ from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 
 from apps.service.models import Service, History
-from utils.git_docker import docker_build, docker_run, docker_remove_container
+from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag
 from utils.reference import Template, response_result
 
 router = APIRouter(prefix="/service")
@@ -42,11 +42,13 @@ async def api_change_version(request: Request):
         return response_result(0, "Version not found")
 
     if body["field"] == "version":
+        if body["value"] == history.version:
+            return response_result(1, "success")
+        
         service = await history.service
         try:
-            docker_remove_container(history.image_id)
+            docker_tag(tag(service, history.version), tag(service, body["value"]))
             history.version = body["value"]
-            history.image_id = docker_build(service, history.version)
         except Exception as e:
             return response_result(0, str(e))
     else:
@@ -67,7 +69,7 @@ async def api_versions(name: str):
         1,
         [
             {
-                "id": history.id,
+                "id": history.image_id[:12],
                 "created_at": history.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "version": history.version,
                 "description": history.description,
@@ -90,7 +92,12 @@ async def new_service(request: Request):
 
 @router.get("/api-delete/{pk}")
 async def delete_version_history(pk):
-    if history := await History.filter(id=pk).first():
+    if history := await History.filter(image_id__contains=pk).first():
+        if history.running:
+            docker_stop(await history.service)
+        else:
+            docker_rmi(history.image_id)
+
         await history.delete()
 
     return response_result(1, "success")
@@ -106,13 +113,16 @@ async def service_new_version(request: Request):
         return response_result(0, "Version has been existed")
 
     try:
-        image_id = docker_build(service, body["version"])
+        await History.create(
+            service=service, 
+            version=body["version"], 
+            description=body["description"],
+            image_id=docker_build(service, body["version"])
+        )
     except Exception as e:
         return response_result(0, str(e))
 
-    await History.create(
-        service=service, version=body["version"], description=body["description"], image_id=image_id
-    )
+   
     return response_result(1, "success")
 
 
@@ -122,9 +132,8 @@ async def run_history(history_id):
         return response_result(0, "Version not found")
 
     service: Service = await history.service
-    old_version = await History.filter(service=service, running=True).first()
 
-    if old_version:
+    if (old_version := await History.filter(service=service, running=True).first()):
         old_version.running = False
         await old_version.save()
 

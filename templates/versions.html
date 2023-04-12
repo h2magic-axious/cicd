@@ -8,6 +8,7 @@
 <table class="table table-striped">
     <thead>
         <tr>
+            <th scope="th">ID</th>
             <th scope="col">发布日期</th>
             <th scope="col">版本号</th>
             <th scope="col">运行状态</th>
@@ -72,6 +73,10 @@
     function renderTr(item) {
         let resultDom = document.createElement("tr")
 
+        let idTd = document.createElement("td")
+        idTd.innerText = item["id"]
+        resultDom.appendChild(idTd)
+
         let tdCreated = document.createElement("td")
         tdCreated.innerText = item["created_at"]
         resultDom.appendChild(tdCreated)
@@ -107,6 +112,9 @@
         runButton.type = "button"
         runButton.classList.add("btn", "btn-success")
         runButton.innerText = "运行"
+        runButton.addEventListener("click", function () {
+            runService(item)
+        })
         div.appendChild(runButton)
 
         let backButton = document.createElement("button")

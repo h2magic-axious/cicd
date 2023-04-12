@@ -8,5 +8,5 @@ aerich upgrade
 
 kill -9 `lsof -i:65530 -t`
 
-uvicorn main:app --host 0.0.0.0 --port 65530 --reload
+uvicorn main:app --host 0.0.0.0 --port 65530 --reload --reload-exclude "data/*"
 
