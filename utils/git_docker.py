@@ -1,9 +1,7 @@
-import docker
-from git import Repo
-
 from apps.service.models import Service
 from utils.environments import Env
 from utils.settings import BASE_DIR
+from utils.reference import execute
 
 DATA_DIR = BASE_DIR.joinpath("data")
 
@@ -11,7 +9,6 @@ DATA_DIR = BASE_DIR.joinpath("data")
 class ServiceAgent:
     __instance_map = dict()
     registry = Env.REGISTRY
-    client = docker.from_env() if Env.DOCKER_SOCK else docker.DockerClient(base_url=Env.DOCKER_SOCK)
     network = Env.NETWORK
 
     def __new__(cls, service: Service):
@@ -21,9 +18,6 @@ class ServiceAgent:
 
     def __init__(self, service: Service):
         self.service = service
-
-    def __del__(self):
-        self.client.close()
 
     def mark_tag(self, version):
         if self.registry is None:
@@ -35,36 +29,19 @@ class ServiceAgent:
         p = DATA_DIR.joinpath(self.service.name)
 
         if p.exists():
-            Repo(p).remote(name="origin").pull()
+            execute(f"git -C {p} pull")
         else:
-            Repo.clone_from(self.service.repository, p)
+            execute(f"git clone {self.service.repository} {p}")
+
+        return str(p)
 
     async def build(self, version):
-        await self.git_clone()
-
-        response = self.client.api.build(
-            path=str(DATA_DIR.joinpath(self.service.name)),
-            dockerfile="Dockerfile",
-            tag=self.mark_tag(version),
-            rm=True,
-            decode=True,
-            pull=True
-        )
-        for line in response:
-            print(line)
-            if "aux" in line:
-                temp: str = line["aux"]["ID"]
-                return temp.split(":")[1]
+        p = await self.git_clone()
+        image_tag = self.mark_tag(version)
+        execute(f"docker build -f {p}/Dockerfile -t {image_tag} {p}")
+        execute(f"docker push {image_tag}")
 
     async def run(self, version):
-        if container := self.client.containers.get(self.service.container_id):
-            container.remove()
-
-        container = self.client.containers.run(
-            image=self.mark_tag(version),
-            name=self.service.name,
-            network=self.network,
-            detach=True
-        )
-        self.service.container_id = container.id
-        await self.service.save()
+        execute(f"docker stop {self.service.name}")
+        execute(f"docker rm {self.service.name}")
+        execute(f"docker run -d --name {self.service.name} --{self.network} {self.mark_tag(version)}")

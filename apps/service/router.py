@@ -65,13 +65,6 @@ async def api_versions(name: str):
 @router.get("/api-delete/{pk}")
 async def delete_version_history(pk):
     if history := await History.filter(id=pk).first():
-        agent = ServiceAgent(await history.service)
-        #
-        if container := agent.client.containers.get(history.service.container_id):
-            container.remove()
-
-        agent.client.images.remove(history.image_id)
-
         await history.delete()
 
     return response_result(1, "success")

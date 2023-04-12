@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 from fastapi.templating import Jinja2Templates
 
@@ -6,6 +7,7 @@ from tortoise.models import Model
 from tortoise import fields
 
 Template = Jinja2Templates(directory="templates")
+
 
 class AbstractBaseModel(Model):
     id: int = fields.IntField(pk=True)
@@ -39,3 +41,12 @@ def random_string(length=6):
 
 def response_result(code, result):
     return {"code": code, "result": result}
+
+
+def execute(cmd):
+    print(f"Exec: {cmd}")
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in iter(p.stdout.readline, b''):
+        print(line.decode().strip())
+
+    p.wait()
