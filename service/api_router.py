@@ -1,30 +1,20 @@
 from fastapi import APIRouter
+from fastapi.responses import ORJSONResponse
 from fastapi.requests import Request
-from fastapi.responses import HTMLResponse
 
-from apps.service.models import Service, History
+from service.models import Service, History
 from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag
-from utils.reference import Template, response_result, try_response
+from utils.reference import response_result
 
-router = APIRouter(prefix="/service")
-
-
-@router.get("/login", response_class=HTMLResponse)
-async def service_login(request: Request):
-    return Template.TemplateResponse("login.html", {"request": request})
+router = APIRouter(prefix="/api", default_response_class=ORJSONResponse)
 
 
-@router.get("/index", response_class=HTMLResponse)
-async def service_index(request: Request):
-    return Template.TemplateResponse("services.html", {"request": request})
-
-
-@router.get("/api-services")
+@router.get("/services")
 async def api_services():
     return response_result(1, await Service.all())
 
 
-@router.post("/api-change-service")
+@router.post("/change-service")
 async def api_change_service(request: Request):
     body = await request.json()
     if not (service := await Service.filter(id=body["id"]).first()):
@@ -35,7 +25,7 @@ async def api_change_service(request: Request):
     return response_result(1, "success")
 
 
-@router.post("/api/api-change-version")
+@router.post("/change-version")
 async def api_change_version(request: Request):
     body = await request.json()
     if not (history := await History.filter(id=body["id"]).first()):
@@ -44,7 +34,7 @@ async def api_change_version(request: Request):
     if body["field"] == "version":
         if body["value"] == history.version:
             return response_result(1, "success")
-        
+
         service = await history.service
         try:
             docker_tag(tag(service, history.version), tag(service, body["value"]))
@@ -58,12 +48,7 @@ async def api_change_version(request: Request):
     return response_result(1, "success")
 
 
-@router.get("/version/{name}", response_class=HTMLResponse)
-async def service_version(request: Request, name: str):
-    return Template.TemplateResponse("versions.html", {"request": request, "name": name})
-
-
-@router.get("/api-versions/{name}")
+@router.get("/versions/{name}")
 async def api_versions(name: str):
     return response_result(
         1,
@@ -80,7 +65,7 @@ async def api_versions(name: str):
     )
 
 
-@router.post("/api-new-service")
+@router.post("/new-service")
 async def new_service(request: Request):
     body = await request.json()
     if await Service.filter(name=body["name"]).exists():
@@ -90,7 +75,7 @@ async def new_service(request: Request):
     return response_result(1, "success")
 
 
-@router.get("/api-delete/{pk}")
+@router.get("/delete-version/{pk}")
 async def delete_version_history(pk):
     if history := await History.filter(image_id__contains=pk).first():
         try:
@@ -106,7 +91,7 @@ async def delete_version_history(pk):
     return response_result(1, "success")
 
 
-@router.post("/api-new-version")
+@router.post("/new-version")
 async def service_new_version(request: Request):
     body = await request.json()
     if not (service := await Service.filter(name=body["name"]).first()):
@@ -117,23 +102,22 @@ async def service_new_version(request: Request):
 
     try:
         await History.create(
-            service=service, 
-            version=body["version"], 
+            service=service,
+            version=body["version"],
             description=body["description"],
             image_id=docker_build(service, body["version"])
         )
     except Exception as e:
         return response_result(0, str(e))
 
-   
     return response_result(1, "success")
 
 
-@router.get("/api-run/{history_id}")
+@router.get("/run/{history_id}")
 async def run_history(history_id):
     if not (history := await History.filter(image_id__contains=history_id).first()):
         return response_result(0, "Version not found")
-    
+
     try:
         service: Service = await history.service
 

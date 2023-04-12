@@ -3,18 +3,19 @@ import json
 
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 from tortoise.contrib.fastapi import register_tortoise
 
-from apps.service.router import router as service_router
 from utils.administrator import check_admin, build_token, check_token
 from utils.reference import response_result, try_to_do
 from utils.settings import *
 from utils.whitelist import check_whitelist
 
-app = FastAPI(default_response_class=ORJSONResponse)
+from service import api_router, page_router
+
+app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 解决跨域
@@ -28,7 +29,8 @@ app.add_middleware(
 # 增加Session
 app.add_middleware(SessionMiddleware, secret_key=Env.SECRET_KEY)
 
-app.include_router(service_router)
+app.include_router(api_router.router)
+app.include_router(page_router.router)
 
 
 async def _response(request, call_next):

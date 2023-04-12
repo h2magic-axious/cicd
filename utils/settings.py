@@ -18,11 +18,9 @@ DB_CONF = {
 
 DATABASE = {"default": {"engine": "tortoise.backends.asyncpg", "credentials": DB_CONF}}
 
-APPLICATIONS = [
-    "service"
+DATABASE_MODELS = [
+    "service.models"
 ]
-
-DATABASE_MODELS = [f"apps.{a}.models" for a in APPLICATIONS]
 
 TORTOISE_ORM = {
     "connections": {

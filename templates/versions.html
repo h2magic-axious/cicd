@@ -54,7 +54,7 @@
 <script>
     window.onload = function () {
         const pathArray = window.location.pathname.split("/")
-        fetch(`/service/api-versions/${pathArray[3]}`, {
+        fetch(`/api/versions/${pathArray[3]}`, {
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
         }).then(response => response.json()).then(data => {
             if (data.code === 1) {
@@ -143,7 +143,7 @@
     }
 
     function changeValue(id, field, value) {
-        fetch("/service/api-change-version", {
+        fetch("/api/change-version", {
             method: "POST",
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
             body: JSON.stringify({
@@ -164,7 +164,7 @@
         } else {
             const loading = new Loading({type: 3})
             loading.init()
-            fetch(`/service/api-run/${item["id"]}`, {
+            fetch(`/api/run/${item["id"]}`, {
                 headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
             }).then(response => response.json()).then(data => {
                 loading.hide()
@@ -180,7 +180,7 @@
     function deleteVersion(id) {
         const loading = new Loading({type: 3})
         loading.init()
-        fetch(`/service/api-delete/${id}`, {
+        fetch(`/api/delete-version/${id}`, {
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
         }).then(response => response.json()).then(data => {
             loading.hide()
@@ -198,7 +198,7 @@
             wrap: document.querySelector("#exampleModal")
         })
         loading.init()
-        fetch("/service/api-new-version", {
+        fetch("/api/new-version", {
             method: "POST",
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
             body: JSON.stringify({

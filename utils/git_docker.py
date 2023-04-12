@@ -1,7 +1,7 @@
 import docker
 from git import Repo
 
-from apps.service.models import Service
+from service.models import Service
 from utils.reference import try_to_do
 from utils.environments import Env
 from utils.settings import BASE_DIR

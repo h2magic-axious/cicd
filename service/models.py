@@ -28,7 +28,7 @@ class ContainerConfigure(AbstractBaseModel):
     class CType(enum.IntEnum):
         PORT = 1
         ENVIRONMENT = 2
-        VOLUMNE = 3
-    
+        VOLUME = 3
+
     configure_type = fields.IntEnumField(CType)
     value = fields.CharField(max_length=255, null=False)

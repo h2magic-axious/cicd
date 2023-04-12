@@ -64,7 +64,7 @@
 {% block jsBlock %}
 <script>
     window.onload = function () {
-        fetch("/service/api-services", {
+        fetch("/api/services", {
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
         }).then(response => response.json()).then(data => {
             if (data.code === 1) {
@@ -136,7 +136,7 @@
     }
 
     function changeValue(id, field, value) {
-        fetch("/service/api-change-service", {
+        fetch("/api/change-service", {
             method: "POST",
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
             body: JSON.stringify({
@@ -163,7 +163,7 @@
             repository: document.querySelector("#serviceRepo").value
         }
         loading.init()
-        fetch("/service/api-new-service", {
+        fetch("/api/new-service", {
             method: "POST",
             headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
             body: JSON.stringify(body)
