@@ -1,3 +1,5 @@
+import enum
+
 from utils.reference import AbstractBaseModel, AbstractCreateAtModel, fields
 
 
@@ -18,3 +20,15 @@ class History(AbstractCreateAtModel):
     image_id = fields.CharField(max_length=64, description="", null=True)
     running = fields.BooleanField(description="运行?", default=False)
     description = fields.TextField(description="版本描述", null=True)
+
+
+class ContainerConfigure(AbstractBaseModel):
+    service = fields.ForeignKeyField("models.Service", description="关联服务")
+
+    class CType(enum.IntEnum):
+        PORT = 1
+        ENVIRONMENT = 2
+        VOLUMNE = 3
+    
+    configure_type = fields.IntEnumField(CType)
+    value = fields.CharField(max_length=255, null=False)
