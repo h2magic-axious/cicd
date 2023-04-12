@@ -35,11 +35,12 @@ class ServiceAgent:
 
         return str(p)
 
-    async def build(self, version):
+    async def build(self, version, push=False):
         p = await self.git_clone()
         image_tag = self.mark_tag(version)
         execute(f"docker build -f {p}/Dockerfile -t {image_tag} {p}")
-        execute(f"docker push {image_tag}")
+        if push:
+            execute(f"docker push {image_tag}")
 
     async def run(self, version):
         execute(f"docker stop {self.service.name}")
