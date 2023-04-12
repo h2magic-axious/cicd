@@ -74,7 +74,6 @@ def check_token(request: Request):
 async def add_process_time_header(request: Request, call_next):
     if request.url.path == "/":
         return RedirectResponse(url=app.url_path_for("service_index"))
-
     if check_whitelist(request.url.path):
         return await _response(request, call_next)
 
@@ -82,8 +81,12 @@ async def add_process_time_header(request: Request, call_next):
     if not status or token is None:
         return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
 
-    if administrator.parse(token) != administrator:
-        return Response("Invalid Token", status_code=400)
+    try:
+        if administrator.parse(token) != administrator:
+            return Response("Invalid Token", status_code=400)
+    except Exception as e:
+        print("Token解析错误: {e}")
+        return RedirectResponse(url=app.url_path_for("service_login"), headers={"Context-Type": "text/html"})
 
     return await _response(request, call_next)
 
