@@ -7,7 +7,7 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th scope="col">ID</th>
+            <th scope="col">#</th>
             <th scope="col">服务名</th>
             <th scope="col">别名</th>
             <th scope="col">代码仓库</th>
@@ -83,17 +83,14 @@
     function renderTr(item) {
         let resultDom = document.createElement("tr")
 
-        let id = item["id"]
-
         let thId = document.createElement("th")
-        thId.setAttribute("scope", "row")
-        thId.innerHTML = `<a href="/service/version/${item["name"]}">${id}</a>`
+        thId.appendChild(renderButtonGroup(item))
         resultDom.appendChild(thId)
 
         const fields = ["name", "alias", "repository", "description"]
         fields.forEach((e) => {
             let td = document.createElement("td")
-            td.appendChild(renderInput(id, e, item[e]))
+            td.appendChild(renderInput(item["id"], e, item[e]))
             resultDom.appendChild(td)
         })
 
@@ -115,23 +112,26 @@
         return inputDom
     }
 
-    function renderButtonGroup(name) {
+    function renderButtonGroup(item) {
         let div = document.createElement("div")
         div.classList.add("btn-group")
         div.setAttribute("role", "group")
 
         let runButton = document.createElement("button")
         runButton.type = "button"
-        runButton.classList.add("btn", "btn-success")
-        runButton.innerText = "运行"
+        runButton.classList.add("btn", "btn-outline-primary")
+        runButton.innerText = "版本"
+        runButton.addEventListener("click", function() {
+            window.location.href = `/service/version/${item["name"]}`
+        })
         div.appendChild(runButton)
-
+        /*
         let backButton = document.createElement("button")
         backButton.type = "button"
-        backButton.classList.add("btn", "btn-danger")
+        backButton.classList.add("btn", "btn-light")
         backButton.innerText = "回退"
         div.appendChild(backButton)
-
+        */
         return div
     }
 

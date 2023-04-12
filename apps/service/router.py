@@ -128,9 +128,9 @@ async def service_new_version(request: Request):
 
 @router.get("/api-run/{history_id}")
 async def run_history(history_id):
-    if not (history := await History.filter(id=history_id).first()):
+    if not (history := await History.filter(image_id__contains=history_id).first()):
         return response_result(0, "Version not found")
-
+    
     service: Service = await history.service
 
     if (old_version := await History.filter(service=service, running=True).first()):
@@ -140,7 +140,8 @@ async def run_history(history_id):
     service.container_id = docker_run(service, history.version)
     history.running = True
 
-    await service.save()
+    print(service.name, service.container_id)
     await history.save()
+    await service.save()
 
     return response_result(1, "success")

@@ -6,7 +6,7 @@ class Service(AbstractBaseModel):
     alias = fields.CharField(max_length=30, description="别名")
     description = fields.TextField(description="描述", null=True)
     repository = fields.CharField(max_length=255, null=False, description="代码仓库")
-    container_id = fields.CharField(max_length=20, unique=True, null=True, description="运行中的容器ID")
+    container_id = fields.CharField(max_length=64, unique=True, null=True, description="运行中的容器ID")
 
     def __str__(self):
         return f"{self.name}"

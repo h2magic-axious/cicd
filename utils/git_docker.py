@@ -41,6 +41,9 @@ def docker_build(service: Service, version):
 
 
 def docker_stop(service: Service):
+    if service.container_id is None:
+        return
+    
     if container := DockerClient.containers.get(service.container_id):
         container.remove()
 
@@ -58,7 +61,12 @@ def docker_run(service: Service, version):
     docker_stop(service)
 
     container = DockerClient.containers.run(
-        image=tag(service, version), name=service.name, network=Env.NETWORK, detach=True
+        image=tag(service, version),
+        name=service.name, 
+        network=Env.NETWORK, 
+        detach=True
     )
+
+    print("容器ID: ", container.id)
 
     return container.id
