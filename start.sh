@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-git config --global credential.helper store
-git config --global credential.helper 'store --file /app/credentials'
+cd `pwd`
+
+source venv/bin/activate
 
 aerich upgrade
 
