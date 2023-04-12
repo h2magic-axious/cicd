@@ -34,6 +34,27 @@ async def api_change_service(request: Request):
     await service.save()
     return response_result(1, "success")
 
+@router.post("/api/api-change-version")
+async def api_change_version(request: Request):
+    body = await request.json()
+    if not (history := await History.filter(id=body["id"]).first()):
+        return response_result(0, "Version not found")
+    
+    if body["field"] == "version":
+        service = await history.service
+        try:
+            agent = ServiceAgent(service)
+            agent.client.images.remove(history.image_id)
+            history.image_id = await agent.build(body["value"])
+            history.version = body["value"]
+        except Exception as e:
+            return response_result(0, str(e))
+    else:
+        history.description = body["value"]
+
+    await history.save()
+    return response_result(1, "success")
+
 
 @router.get("/version/{name}", response_class=HTMLResponse)
 async def service_version(request: Request, name: str):

@@ -1,48 +1,61 @@
+import docker
+from git import Repo
+
 from apps.service.models import Service
 from utils.environments import Env
 from utils.settings import BASE_DIR
-from utils.reference import execute
 
 DATA_DIR = BASE_DIR.joinpath("data")
 
+DockerClient = docker.from_env()
 
-class ServiceAgent:
-    __instance_map = dict()
-    registry = Env.REGISTRY
-    network = Env.NETWORK
 
-    def __new__(cls, service: Service):
-        if service.name not in cls.__instance_map:
-            cls.__instance_map[service.name] = object.__new__(cls)
-        return cls.__instance_map[service.name]
+def tag(service: Service, version):
+    result = f"{service.name}:{version}"
+    if Env.REGISTRY is not None:
+        result = f"{Env.REGISTRY}/{result}"
 
-    def __init__(self, service: Service):
-        self.service = service
+    return result
 
-    def mark_tag(self, version):
-        if self.registry is None:
-            return f"{self.service.name}:{version}"
-        else:
-            return f"{self.registry}/{self.service.name}:{version}"
 
-    async def git_clone(self):
-        p = DATA_DIR.joinpath(self.service.name)
+def git_pull(service: Service):
+    p = DATA_DIR.joinpath(service.name)
 
-        if p.exists():
-            execute(f"git -C {p} pull")
-        else:
-            execute(f"git clone {self.service.repository} {p}")
+    if p.exists():
+        Repo(p).remote(name="origin").pull()
+    else:
+        Repo.clone_from(service.repository, p)
 
-        return str(p)
+    return str(p)
 
-    async def build(self, version, push=False):
-        p = await self.git_clone()
-        image_tag = self.mark_tag(version)
-        execute(f"docker build -f {p}/Dockerfile -t {image_tag} {p}")
-        if push:
-            execute(f"docker push {image_tag}")
 
-    async def run(self, version):
-        execute(f"docker stop {self.service.name}")
-        execute(f"docker rm {self.service.name}")
-        execute(f"docker run -d --name {self.service.name} --{self.network} {self.mark_tag(version)}")
+def docker_build(service: Service, version):
+    p = git_pull(service)
+    response = DockerClient.api.build(
+        path=p,
+        dockerfile="Dockerfile",
+        tag=tag(service, version),
+        rm=True,
+        decode=True,
+        pull=True,
+    )
+    for line in response:
+        print(line)
+        if "aux" in line:
+            temp: str = line["aux"]["ID"]
+            return temp.split(":")[1]
+
+
+def docker_stop(service: Service):
+    if container := DockerClient.containers.get(service.container_id):
+        container.remove()
+
+
+def docker_run(service: Service, version):
+    docker_stop(service)
+
+    container = DockerClient.containers.run(
+        image=tag(service, version), name=service.name, network=Env.NETWORK, detach=True
+    )
+
+    return container.id
