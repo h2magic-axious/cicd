@@ -2,6 +2,7 @@ from fastapi import APIRouter
 from fastapi.responses import ORJSONResponse
 from fastapi.requests import Request
 
+from service.interface import build_run_configure
 from service.models import Service, History, ContainerConfigure
 from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag, CACHE_SERVICE
 from utils.reference import response_result
@@ -125,7 +126,10 @@ async def run_history(history_id):
             old_version.running = False
             await old_version.save()
 
-        service.container_id = docker_run(service, history.version)
+        configure = await build_run_configure(service)
+        print(configure)
+
+        service.container_id = docker_run(service, history.version, **configure)
         history.running = True
 
         print(service.name, service.container_id)
