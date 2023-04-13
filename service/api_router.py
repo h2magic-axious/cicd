@@ -2,8 +2,8 @@ from fastapi import APIRouter
 from fastapi.responses import ORJSONResponse
 from fastapi.requests import Request
 
-from service.models import Service, History
-from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag
+from service.models import Service, History, ContainerConfigure
+from utils.git_docker import docker_build, docker_run, docker_rmi, docker_stop, docker_tag, tag, CACHE_SERVICE
 from utils.reference import response_result
 
 router = APIRouter(prefix="/api", default_response_class=ORJSONResponse)
@@ -135,3 +135,43 @@ async def run_history(history_id):
         return response_result(1, "success")
     except Exception as e:
         return response_result(0, str(e))
+
+
+@router.post("/new-configure")
+async def new_configure(request: Request):
+    body = await request.json()
+
+    if not (service := await Service.filter(name=body["name"]).first()):
+        return response_result(0, "Service not found")
+
+    await ContainerConfigure.create(
+        service=service,
+        configure_type=int(body["cType"]),
+        c_left=body.get("cLeft"),
+        c_right=body.get("cRight")
+    )
+
+    return response_result(1, "success")
+
+
+@router.get("/configure/{name}")
+async def list_configure(name: str):
+    return response_result(1, await ContainerConfigure.filter(service__name=name))
+
+
+@router.get("/delete-configure/{pk}")
+async def delete_configure(pk):
+    if c := await ContainerConfigure.filter(id=pk).first():
+        await c.delete()
+
+    return response_result(1, "success")
+
+
+@router.post("/change-configure/{pk}")
+async def change_configure(request: Request, pk):
+    body = await request.json()
+    if c := await ContainerConfigure.filter(id=pk).first():
+        await c.update_from_dict({body["field"]: body["value"]})
+        await c.save()
+
+    return response_result(1, "success")

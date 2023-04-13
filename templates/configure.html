@@ -8,11 +8,11 @@
     <table class="table table-striped">
         <thead>
         <tr>
-            <th scope="col">ID</th>
-            <th scope="col">发布日期</th>
-            <th scope="col">版本号</th>
-            <th scope="col">运行状态</th>
-            <th scope="col">#</th>
+            <th scope="col">配置类型</th>
+            <th scope="col">左值</th>
+            <th scope="col">右值</th>
+            <th scope="col">启用?</th>
+            <th scope="col"></th>
         </tr>
         </thead>
         <tbody id="app">
@@ -29,21 +29,31 @@
                 </div>
                 <div class="modal-body">
                     <div class="mb-3 row">
-                        <label for="versionNumber" class="col-sm-4 col-form-label">版本号</label>
+                        <label>
+                            配置类型
+                            <select class="form-select col-sm-10" id="serviceConfigureType">
+                                <option value="2">环境变量</option>
+                                <option value="1">端口映射</option>
+                                <option value="3">文件映射</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="mb-3 row">
+                        <label for="cLeft" class="col-sm-4 col-form-label">左值</label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="versionNumber">
+                            <input type="text" class="form-control" id="cLeft">
                         </div>
                     </div>
                     <div class="mb-3 row">
-                        <label for="versionDesc" class="col-sm-4 col-form-label">版本描述</label>
+                        <label for="cRight" class="col-sm-4 col-form-label">右值</label>
                         <div class="col-sm-10">
-                            <input type="text" class="form-control" id="versionDesc">
+                            <input type="text" class="form-control" id="cRight">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                    <button type="button" class="btn btn-primary" onclick="updateVersion()">保存</button>
+                    <button type="button" class="btn btn-primary" onclick="newConfigure()">保存</button>
                 </div>
             </div>
         </div>
@@ -52,5 +62,124 @@
 
 
 {% block jsBlock %}
+    <script>
+        const selectMap = {
+            1: "端口映射",
+            2: "环境变量",
+            3: "文件映射"
+        }
+        const fields = ["c_left", "c_right"]
 
+        window.onload = function () {
+            const pathArray = window.location.pathname.split("/")
+            fetch(`/api/configure/${pathArray[3]}`, {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code === 1) {
+                    let table = document.querySelector("#app")
+                    data.result.forEach((e) => {
+                        table.appendChild(renderTr(e))
+                    })
+                } else {
+                    alert(data.result)
+                }
+            }).catch(error => {
+                alert(error)
+            })
+        }
+
+        function renderTr(item) {
+            const id = item["id"]
+            const api = `/api/change-configure/${id}`
+
+            let resultDom = document.createElement("tr")
+
+            let selectDom = document.createElement("td")
+            let selectContent = document.createElement("select")
+            selectContent.classList.add("form-select")
+            selectContent.innerHTML = ""
+            for (const key in selectMap) {
+                const cType = item["configure_type"].toString()
+                const selected = key === cType ? "selected" : ""
+                selectContent.innerHTML += `<option ${selected} value="${key}">${selectMap[key]}</option>`
+            }
+            selectContent.addEventListener("change", function (e) {
+                changeValue(api, id, "configure_type", Number(e.target.value))
+            })
+            selectDom.appendChild(selectContent)
+            resultDom.appendChild(selectDom)
+
+            fields.forEach((e) => {
+                let td = document.createElement("td")
+                td.appendChild(renderInput(id, e, item[e], api))
+                resultDom.appendChild(td)
+            })
+
+            let activeTd = document.createElement("td")
+            let activeDiv = document.createElement("div")
+            activeDiv.classList.add("form-check", "form-switch")
+
+            let activeDom = document.createElement("input")
+            activeDom.classList.add("form-check-input")
+            activeDom.type = "checkbox"
+            activeDom.checked = item["active"]
+            activeDom.setAttribute("role", "switch")
+            activeDom.addEventListener("change", function (e) {
+                changeValue(api, id, "active", e.target.checked)
+            })
+
+            activeDiv.appendChild(activeDom)
+            activeTd.appendChild(activeDiv)
+            resultDom.appendChild(activeTd)
+
+            let buttonTd = document.createElement("td")
+            let buttonDiv = document.createElement("div")
+            buttonDiv.classList.add("btn-group")
+            buttonDiv.setAttribute("role", "group")
+
+            let buttonDom = document.createElement("button")
+            buttonDom.type = "button"
+            buttonDom.classList.add("btn", "btn-danger")
+            buttonDom.innerText = "删除"
+            buttonDom.addEventListener("click", function () {
+                deleteConfigure(id)
+            })
+            buttonDiv.appendChild(buttonDom)
+            buttonTd.appendChild(buttonDiv)
+            resultDom.appendChild(buttonTd)
+
+            return resultDom
+        }
+
+        function newConfigure() {
+            fetch("/api/new-configure", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify({
+                    name: window.location.pathname.split("/")[3],
+                    cType: document.querySelector("#serviceConfigureType").value,
+                    cLeft: document.querySelector("#cLeft").value,
+                    cRight: document.querySelector("#cRight").value
+                })
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                } else {
+                    window.location.reload()
+                }
+            })
+        }
+
+        function deleteConfigure(id) {
+            fetch(`/api/delete-configure/${id}`, {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code !== 1) {
+                    alert(data.result)
+                } else {
+                    window.location.reload()
+                }
+            })
+        }
+    </script>
 {% endblock %}

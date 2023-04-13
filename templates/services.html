@@ -1,11 +1,11 @@
 {% extends "index.html" %}
 
 {% block indexBody %}
-<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
-    新建
-</button>
-<table class="table table-striped">
-    <thead>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+        新建
+    </button>
+    <table class="table table-striped">
+        <thead>
         <tr>
             <th scope="col">#</th>
             <th scope="col">服务名</th>
@@ -13,169 +13,140 @@
             <th scope="col">代码仓库</th>
             <th scope="col">描述</th>
         </tr>
-    </thead>
-    <tbody id="app">
-    </tbody>
-</table>
+        </thead>
+        <tbody id="app">
+        </tbody>
+    </table>
 
-<!-- Modal -->
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">新建服务</h1>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="mb-4 row">
-                    <label for="serviceName" class="col-sm-3 col-form-label">服务名</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="serviceName">
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">新建服务</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-4 row">
+                        <label for="serviceName" class="col-sm-3 col-form-label">服务名</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="serviceName">
+                        </div>
+                    </div>
+                    <div class="mb-4 row">
+                        <label for="serviceAlias" class="col-sm-3 col-form-label">别名</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="serviceAlias">
+                        </div>
+                    </div>
+                    <div class="mb-4 row">
+                        <label for="serviceDesc" class="col-sm-3 col-form-label">描述</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="serviceDesc">
+                        </div>
+                    </div>
+                    <div class="mb-4 row">
+                        <label for="serviceRepo" class="col-sm-3 col-form-label">代码仓库</label>
+                        <div class="col-sm-10">
+                            <input type="text" class="form-control" id="serviceRepo">
+                        </div>
                     </div>
                 </div>
-                <div class="mb-4 row">
-                    <label for="serviceAlias" class="col-sm-3 col-form-label">别名</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="serviceAlias">
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="newService()">保存</button>
                 </div>
-                <div class="mb-4 row">
-                    <label for="serviceDesc" class="col-sm-3 col-form-label">描述</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="serviceDesc">
-                    </div>
-                </div>
-                <div class="mb-4 row">
-                    <label for="serviceRepo" class="col-sm-3 col-form-label">代码仓库</label>
-                    <div class="col-sm-10">
-                        <input type="text" class="form-control" id="serviceRepo">
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
-                <button type="button" class="btn btn-primary" onclick="newService()">保存</button>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
 
 {% block jsBlock %}
-<script>
-    window.onload = function () {
-        fetch("/api/services", {
-            headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` }
-        }).then(response => response.json()).then(data => {
-            if (data.code === 1) {
-                let table = document.querySelector("#app")
-                data.result.forEach((e) => {
-                    table.appendChild(renderTr(e))
-                })
-            } else {
-                alert(data.result)
-            }
-        }).catch(error => {
-            console.log(error)
-        })
-    }
-
-    function renderTr(item) {
-        let resultDom = document.createElement("tr")
-
-        let thId = document.createElement("th")
-        thId.appendChild(renderButtonGroup(item))
-        resultDom.appendChild(thId)
-
+    <script>
         const fields = ["name", "alias", "repository", "description"]
-        fields.forEach((e) => {
-            let td = document.createElement("td")
-            td.appendChild(renderInput(item["id"], e, item[e]))
-            resultDom.appendChild(td)
-        })
-
-        // resultDom.appendChild(renderButtonGroup(item["name"]))
-
-        return resultDom
-    }
-
-    function renderInput(id, field, value) {
-        let inputDom = document.createElement("input")
-        inputDom.type = "text"
-        inputDom.classList.add("form-control")
-        inputDom.value = value
-
-        inputDom.addEventListener("change", function (ev) {
-            changeValue(id, field, ev.target.value)
-        })
-
-        return inputDom
-    }
-
-    function renderButtonGroup(item) {
-        let div = document.createElement("div")
-        div.classList.add("btn-group")
-        div.setAttribute("role", "group")
-
-        let runButton = document.createElement("button")
-        runButton.type = "button"
-        runButton.classList.add("btn", "btn-outline-primary")
-        runButton.innerText = "版本"
-        runButton.addEventListener("click", function() {
-            window.location.href = `/service/version/${item["name"]}`
-        })
-        div.appendChild(runButton)
-        
-        let backButton = document.createElement("button")
-        backButton.type = "button"
-        backButton.classList.add("btn", "btn-outline-primary")
-        backButton.innerText = "配置"
-        backButton.addEventListener("click", function () {
-            window.location.href = `/service/configure/${item["name"]}`
-        })
-        div.appendChild(backButton)
-        
-        return div
-    }
-
-    function changeValue(id, field, value) {
-        fetch("/api/change-service", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
-            body: JSON.stringify({
-                id: id,
-                field: field,
-                value: value
+        window.onload = function () {
+            fetch("/api/services", {
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`}
+            }).then(response => response.json()).then(data => {
+                if (data.code === 1) {
+                    let table = document.querySelector("#app")
+                    data.result.forEach((e) => {
+                        table.appendChild(renderTr(e))
+                    })
+                } else {
+                    alert(data.result)
+                }
+            }).catch(error => {
+                console.log(error)
             })
-        }).then(response => response.json()).then(data => {
-            if (data.code !== 1) {
-                alert(data.result)
-            }
-        })
-    }
-
-    function newService() {
-        const loading = new Loading({
-            type: 3,
-            wrap: document.querySelector("#exampleModal")
-        })
-        const body = {
-            name: document.querySelector("#serviceName").value,
-            alias: document.querySelector("#serviceAlias").value,
-            description: document.querySelector("#serviceDesc").value,
-            repository: document.querySelector("#serviceRepo").value
         }
-        loading.init()
-        fetch("/api/new-service", {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${sessionStorage.getItem("token")}` },
-            body: JSON.stringify(body)
-        }).then(response => response.json()).then(data => {
-            loading.hide()
-            alert(data.result)
-            window.location.reload()
-        })
-    }
 
-</script>
+        function renderTr(item) {
+            let resultDom = document.createElement("tr")
+
+            let thId = document.createElement("th")
+            thId.appendChild(renderButtonGroup(item))
+            resultDom.appendChild(thId)
+
+            fields.forEach((e) => {
+                let td = document.createElement("td")
+                td.appendChild(renderInput(item["id"], e, item[e], "/api/change-service"))
+                resultDom.appendChild(td)
+            })
+
+            return resultDom
+        }
+
+
+        function renderButtonGroup(item) {
+            let div = document.createElement("div")
+            div.classList.add("btn-group")
+            div.setAttribute("role", "group")
+
+            let runButton = document.createElement("button")
+            runButton.type = "button"
+            runButton.classList.add("btn", "btn-outline-primary")
+            runButton.innerText = "版本"
+            runButton.addEventListener("click", function () {
+                window.location.href = `/service/version/${item["name"]}`
+            })
+            div.appendChild(runButton)
+
+            let backButton = document.createElement("button")
+            backButton.type = "button"
+            backButton.classList.add("btn", "btn-outline-primary")
+            backButton.innerText = "配置"
+            backButton.addEventListener("click", function () {
+                window.location.href = `/service/configure/${item["name"]}`
+            })
+            div.appendChild(backButton)
+
+            return div
+        }
+
+
+        function newService() {
+            const loading = new Loading({
+                type: 3,
+                wrap: document.querySelector("#exampleModal")
+            })
+            const body = {
+                name: document.querySelector("#serviceName").value,
+                alias: document.querySelector("#serviceAlias").value,
+                description: document.querySelector("#serviceDesc").value,
+                repository: document.querySelector("#serviceRepo").value
+            }
+            loading.init()
+            fetch("/api/new-service", {
+                method: "POST",
+                headers: {"Authorization": `Bearer ${sessionStorage.getItem("token")}`},
+                body: JSON.stringify(body)
+            }).then(response => response.json()).then(data => {
+                loading.hide()
+                alert(data.result)
+                window.location.reload()
+            })
+        }
+
+    </script>
 {% endblock %}

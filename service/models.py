@@ -31,4 +31,6 @@ class ContainerConfigure(AbstractBaseModel):
         VOLUME = 3
 
     configure_type = fields.IntEnumField(CType)
-    value = fields.CharField(max_length=255, null=False)
+    c_left = fields.CharField(max_length=64, description="配置名", null=True)
+    c_right = fields.CharField(max_length=255, null=False)
+    active = fields.BooleanField(default=True, description="启动?")

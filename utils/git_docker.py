@@ -10,6 +10,8 @@ DATA_DIR = BASE_DIR.joinpath("data")
 
 DockerClient = docker.from_env()
 
+CACHE_SERVICE = dict()
+
 
 def tag(service: Service, version):
     result = f"{service.name}:{version}"
@@ -45,7 +47,7 @@ def docker_build(service: Service, version):
 def docker_stop(service: Service):
     if service.container_id is None:
         return
-    print("ContaienrId: ", service.container_id)
+    print("Container Id: ", service.container_id)
     if container := DockerClient.containers.get(service.container_id):
         container.stop()
         container.remove()
@@ -62,11 +64,11 @@ def docker_tag(old_tag, new_tag):
     DockerClient.images.remove(old_tag)
 
 
-def docker_run(service: Service, version):
+def docker_run(service: Service, version, **kwargs):
     docker_stop(service)
 
     container = DockerClient.containers.run(
-        image=tag(service, version), name=service.name, network=Env.NETWORK, detach=True
+        image=tag(service, version), name=service.name, network=Env.NETWORK, detach=True, **kwargs
     )
 
     print("容器ID: ", container.id)
